@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClusterProof · sample console</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>ClusterProof</h1>
+      <p>Relational test-sample lifecycle · all data fictional</p>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="workbench" role="tab">Workbench</button>
+    <button class="tab" data-view="releases" role="tab">Releases</button>
+    <button class="tab" data-view="source" role="tab">Source &amp; design</button>
+  </nav>
+  <div class="upstream" id="upstream" aria-live="polite"></div>
+</header>
+
+<main>
+  <!-- ------------------------------------------------------------ workbench -->
+  <section id="view-workbench" class="view active">
+    <div class="cols">
+      <aside class="panel">
+        <h2>Build a candidate</h2>
+        <form id="run-form" class="form">
+          <label>Label <input name="label" value="November partner extract" required></label>
+          <div class="row2">
+            <label>Seed <input name="seed" value="424242" required></label>
+            <label>Target rows <input name="sample_size" type="number" min="1" value="60" required></label>
+          </div>
+          <label>Mode
+            <select name="mode">
+              <option value="initial">initial</option>
+              <option value="topup">top-up an earlier run</option>
+            </select>
+          </label>
+          <label class="parent-wrap" hidden>Parent run
+            <select name="parent_run_id" id="parent-run"></select>
+          </label>
+          <button class="primary" type="submit">Create run &amp; build</button>
+        </form>
+        <p class="hint">Same seed + unchanged source reproduces identical members.
+          Top-ups keep the parent member list and only replace what the source
+          forces out.</p>
+
+        <h2>Run history</h2>
+        <div id="runs" class="run-list" aria-live="polite"></div>
+      </aside>
+
+      <section class="panel wide" id="candidate-panel">
+        <div class="empty" id="candidate-empty">
+          <h2>No candidate selected</h2>
+          <p>Create a run or pick one from history. The console will show
+            membership changes, stratum weights and every checker finding.</p>
+        </div>
+        <div id="candidate" hidden></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- releases -->
+  <section id="view-releases" class="view">
+    <div class="cols">
+      <aside class="panel">
+        <h2>Published releases</h2>
+        <p class="hint">Releases are frozen. A withdrawal never edits one — it
+          triggers a new candidate and, if needed, a superseding release.</p>
+        <div id="release-list" class="run-list"></div>
+      </aside>
+      <section class="panel wide" id="release-panel">
+        <div class="empty"><h2>Select a release</h2>
+          <p>Signed manifests, row counts and withdrawal status appear here.</p></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------- source/design -->
+  <section id="view-source" class="view">
+    <div class="grid2">
+      <section class="panel">
+        <h2>Relations</h2>
+        <p class="hint">What a sampled account drags along. Disabling a relation
+          stops new candidates from emitting its rows; a queued old job cannot
+          re-emit them either.</p>
+        <table class="table" id="relations"></table>
+        <h2 style="margin-top:1.4rem">Strata</h2>
+        <p class="hint">Every enabled cell must meet its floor. Lowering a floor
+          is an explicit design decision, not an automatic fix.</p>
+        <table class="table" id="strata"></table>
+      </section>
+      <section class="panel">
+        <h2>Source activity</h2>
+        <p class="hint">Withdrawals, new rows and design changes recorded by the
+          sampler. These drive replacement reasons.</p>
+        <div id="changes" class="timeline"></div>
+      </section>
+    </div>
+  </section>
+</main>
+
+<template id="tpl-candidate">
+  <div class="cand-head">
+    <div>
+      <p class="eyebrow">candidate</p>
+      <h2 class="cand-id"></h2>
+      <p class="cand-sub"></p>
+    </div>
+    <div class="cand-actions">
+      <button class="ghost" data-act="check">Re-check</button>
+      <button class="ghost" data-act="waive">Accept conflict…</button>
+      <button class="primary" data-act="publish">Publish release</button>
+    </div>
+  </div>
+  <div class="verdict" aria-live="polite"></div>
+  <div class="statrow"></div>
+  <div class="cand-grid">
+    <section class="card">
+      <h3>Membership change</h3>
+      <p class="lede">What moved since the parent candidate, with the reason
+        recorded for each row. Counts are allowed to fall — they are never
+        padded to look stable.</p>
+      <div class="ledger"></div>
+    </section>
+    <section class="card">
+      <h3>Stratum weights</h3>
+      <p class="lede">Design weight is population ÷ members actually included.
+        A shrinking stratum becomes heavier per remaining member; the delta is
+        shown, not smoothed away.</p>
+      <table class="table weights"></table>
+    </section>
+  </div>
+  <section class="card">
+    <h3>Shortfall disclosure</h3>
+    <p class="lede">Why the delivered count differs from the target. A gap is
+      expected when the source cannot supply a cell; it is never filled from
+      elsewhere.</p>
+    <div class="shortfall-block"></div>
+  </section>
+  <section class="card">
+    <h3>Checker findings</h3>
+    <p class="lede">The checker re-derives closure and withdrawal status from
+      source; it does not trust the sampler's summary.</p>
+    <div class="findings"></div>
+  </section>
+  <section class="card">
+    <h3>Rows in this candidate</h3>
+    <div class="tabs small" id="row-tabs"></div>
+    <div class="rows"></div>
+  </section>
+</template>
+
+<script src="/app.js"></script>
+</body>
+</html>
